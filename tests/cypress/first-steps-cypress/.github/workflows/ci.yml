@@ -1,35 +1,48 @@
 name: CI
 
-on: [push]
+on:
+  push:
+    branches: [ main, cypress-ci ]
+  pull_request:
+    branches: [ main, cypress-ci ]
 
 jobs:
-  build-test:
+  build-and-test:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Baixa o repositório
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2️⃣ Configura o Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'  # agora o cache funciona porque temos o package-lock.json
+          cache: 'npm'        # usa o package-lock.json para cache mais rápido
 
+      # 3️⃣ Instala dependências
       - name: Install dependencies (with lockfile)
-        run: npm ci  # usa o package-lock.json para instalações determinísticas
+        run: npm ci          # instalação limpa e determinística
 
-      - name: Cypress run
+      # 4️⃣ Build do projeto
+      - name: Build project
+        run: npm run build   # o comando de build definido no package.json
+
+      # 5️⃣ Executa os testes Cypress
+      - name: Run Cypress tests
         uses: cypress-io/github-action@v6
         with:
-          install: false           # evita reinstalar dependências
-          build: npm run build     # seu comando de build
-          start: npm run dev       # seu servidor local
-          wait-on: 'http://localhost:3000'  # espera até o servidor subir
-          wait-on-timeout: 120     # tempo máximo de espera em segundos
+          install: false               # já instalamos manualmente
+          start: npm run dev           # inicia o servidor local
+          wait-on: 'http://localhost:3000'  # espera até o app responder
+          wait-on-timeout: 120         # espera até 2 minutos pelo servidor
+          browser: chrome              # roda no Chrome (opcional)
 
+      # 6️⃣ Faz upload de resultados e vídeos dos testes
       - name: Upload Cypress artifacts
-        if: always()
+        if: always()                   # executa mesmo que os testes falhem
         uses: actions/upload-artifact@v4
         with:
           name: cypress-results
@@ -38,3 +51,9 @@ jobs:
             cypress/videos
             cypress/screenshots
             cypress/results
+
+      # 7️⃣ (Opcional) Publica resultados no console
+      - name: Print Cypress results summary
+        if: always()
+        run: |
+          echo "=== Cypress run summa

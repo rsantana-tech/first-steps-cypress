@@ -1,30 +1,34 @@
 name: CI
+
 on: [push]
 
 jobs:
   build-test:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
-          # tire o cache porque ele depende de lockfile
-          # cache: 'npm'
+          cache: 'npm'  # agora o cache funciona porque temos o package-lock.json
 
-      - name: Install dependencies (no lockfile)
-        run: npm install
+      - name: Install dependencies (with lockfile)
+        run: npm ci  # usa o package-lock.json para instalações determinísticas
 
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
-          install: false          # 👈 evita a etapa de install do action
-          build: npm run build
-          start: npm run dev
-          wait-on: 'http://localhost:3000'
+          install: false           # evita reinstalar dependências
+          build: npm run build     # seu comando de build
+          start: npm run dev       # seu servidor local
+          wait-on: 'http://localhost:3000'  # espera até o servidor subir
+          wait-on-timeout: 120     # tempo máximo de espera em segundos
 
-      - name: Upload artifacts
+      - name: Upload Cypress artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:

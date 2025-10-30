@@ -1,31 +1,30 @@
 name: CI
-
 on: [push]
 
 jobs:
   build-test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          # tire o cache porque ele depende de lockfile
+          # cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Install dependencies (no lockfile)
+        run: npm install
 
-      - name: Cypress tests
+      - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
+          install: false          # 👈 evita a etapa de install do action
           build: npm run build
           start: npm run dev
           wait-on: 'http://localhost:3000'
 
-      - name: Upload Cypress results
+      - name: Upload artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
